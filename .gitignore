@@ -1,4 +1,6 @@
 *.hi
 *.o
-cabal.sandbox.config
 .cabal-sandbox/
+cabal.sandbox.config
+scion-core/cabal.sandbox.config
+scion-core/dist/
