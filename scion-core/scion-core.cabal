@@ -17,6 +17,9 @@ library
   build-depends:
       base
     , binary                            >= 0.7 && < 0.8
+    , aeson                             >= 0.7 && < 0.8
+    , text                              >= 0.11 && < 1.2
 
   exposed-modules:
     Development.Scion.Core
+    Development.Scion.Dispatcher

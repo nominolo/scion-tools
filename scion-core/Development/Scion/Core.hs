@@ -1,12 +1,20 @@
 {-# LANGUAGE DeriveDataTypeable  #-}
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE OverloadedStrings  #-}
 module Development.Scion.Core where
 
 import Data.Binary ( Binary(..) )
 import Data.Monoid
+import Data.Aeson
+import qualified Data.Text as T
+
 import GHC.Generics
 
+------------------------------------------------------------------------------
+
+-- | A range in the source program.  Both line and column indexes are
+-- zero-based, i.e., @(0, 0)@ is the first position in every text file.
 data SourceSpan = SourceSpan !Int !Int !Int !Int
   deriving (Eq, Ord, Show, Generic)
 
@@ -18,3 +26,28 @@ instance Monoid SourceSpan where
     SourceSpan lmin cmin lmax cmax
    where (lmin, cmin) = min (l1, c1) (l3, c3)
          (lmax, cmax) = max (l2, c2) (l4, c4)
+
+instance ToJSON SourceSpan where
+  toJSON (SourceSpan l1 c1 l2 c2) =
+    object ["span" .= toJSON [l1, c1, l2, c2]]
+
+------------------------------------------------------------------------------
+
+data Severity = Warning | Error
+  deriving (Eq, Ord, Show, Generic)
+
+-- | An error message produced by a tool.
+data Message = Message !Severity !SourceSpan !MessageInfo
+  deriving (Eq, Ord, Show, Generic)
+
+data MessageInfo
+  = OtherMessage !T.Text
+  deriving (Eq, Ord, Show, Generic)
+
+------------------------------------------------------------------------------
+
+data CompilationResult = CompilationResult
+  { crSuccess             :: !Bool
+  , crFile                :: !FilePath
+  , crMessages            :: [Message]
+  }
