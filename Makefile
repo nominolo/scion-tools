@@ -26,5 +26,7 @@ scion-core/cabal.sandbox.config:
 scion-core/dist/setup-config: scion-core/scion-core.cabal
 	(cd scion-core; $(CABAL) install --only-dependencies && cabal configure)
 
-scion-core/dist/build/libHSscion-core-$(SCION_CORE_VERSION).a: scion-core/dist/setup-config
-	(cd scion-core; $(CABAL) build)
+SCION_CORE_FILES := $(shell find scion-core -name '*.hs')
+
+scion-core/dist/build/libHSscion-core-$(SCION_CORE_VERSION).a: scion-core/dist/setup-config $(SCION_CORE_FILES)
+	(cd scion-core; $(CABAL) build -v)
