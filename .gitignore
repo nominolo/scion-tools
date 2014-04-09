@@ -4,3 +4,6 @@
 cabal.sandbox.config
 scion-core/cabal.sandbox.config
 scion-core/dist/
+tests/cabal.sandbox.config
+tests/dist/
+dist/
