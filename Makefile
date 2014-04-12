@@ -59,4 +59,4 @@ tests/dist/build/test/test: tests/dist/setup-config $(SCION_CORE_FILES)
 
 .PHONY: test
 test: tests/dist/build/test/test
-	./tests/dist/build/test/test
+	./tests/dist/build/test/test -j1
