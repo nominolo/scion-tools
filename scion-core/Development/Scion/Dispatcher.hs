@@ -195,7 +195,9 @@ pMessageBody =
 -- > "`foo' "   =>  "foo"
 -- > "`foo'' "  =>  "foo'"
 pQuotedIdent :: Parser T.Text
-pQuotedIdent = do
+pQuotedIdent = (do
   ident <- char '`' *> takeTill isSpace
   guard (BC8.length ident > 1 && BC8.last ident == '\'')
-  return $ T.decodeUtf8 (BC8.init ident)
+  return $ T.decodeUtf8 (BC8.init ident))
+    <|>
+  (T.decodeUtf8 <$> takeTill isSpace)

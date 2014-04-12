@@ -28,6 +28,14 @@ tests dispHdl =
           testCompile' "single-file/0001-undefined-var.hs" $ \ok msgs -> do
             ok @?= False
             msgs @?= [Message Error (SourceSpan 0 13 0 15) (NotInScope "xyz")]
+      , testCase "undefined-var-primed1" $ do
+          testCompile' "single-file/0002-undefined-var-primed1.hs" $ \ok msgs -> do
+            ok @?= False
+            msgs @?= [Message Error (SourceSpan 1 8 1 14) (NotInScope "zoo'bar")]
+      , testCase "undefined-var-primed2" $ do
+          testCompile' "single-file/0003-undefined-var-primed2.hs" $ \ok msgs -> do
+            ok @?= False
+            msgs @?= [Message Error (SourceSpan 1 8 1 15) (NotInScope "zoo'bar'")]
       ]
     ]
  where
