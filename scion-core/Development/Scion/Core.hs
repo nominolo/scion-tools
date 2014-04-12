@@ -42,6 +42,7 @@ data Message = Message !Severity !SourceSpan !MessageInfo
 
 data MessageInfo
   = OtherMessage !T.Text
+  | NotInScope !T.Text
   deriving (Eq, Ord, Show, Generic)
 
 ------------------------------------------------------------------------------

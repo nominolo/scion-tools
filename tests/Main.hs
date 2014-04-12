@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
 import Development.Scion.Core
@@ -26,7 +27,7 @@ tests dispHdl =
       , testCase "undefined-var" $ do
           testCompile' "single-file/0001-undefined-var.hs" $ \ok msgs -> do
             ok @?= False
-            length msgs @?= 1
+            msgs @?= [Message Error (SourceSpan 0 13 0 15) (NotInScope "xyz")]
       ]
     ]
  where

@@ -1,1 +1,1 @@
-main = print x
+main = print xyz
