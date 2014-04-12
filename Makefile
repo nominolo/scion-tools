@@ -34,11 +34,11 @@ scion-core/dist/setup-config: scion-core/scion-core.cabal
 SCION_CORE_FILES := $(shell find scion-core -name '*.hs')
 
 scion-core/dist/build/libHSscion-core-$(SCION_CORE_VERSION).a: scion-core/dist/setup-config $(SCION_CORE_FILES)
-	(cd scion-core; $(CABAL) build -v)
+	(cd scion-core; $(CABAL) build)
 
 dist/.scion-core-installed: scion-core/dist/build/libHSscion-core-$(SCION_CORE_VERSION).a
 	@echo "=== Installing scion-core ==="
-	(cd scion-core; $(CABAL) install -v)
+	(cd scion-core; $(CABAL) install)
 	@mkdir -p dist/
 	@touch $@
 
@@ -54,7 +54,7 @@ tests/dist/setup-config: tests/scion-tests.cabal dist/.scion-core-installed test
 SCION_CORE_FILES := tests/Main.hs
 
 tests/dist/build/test/test: tests/dist/setup-config $(SCION_CORE_FILES)
-	(cd tests; $(CABAL) build -v)
+	(cd tests; $(CABAL) build)
 
 
 .PHONY: test
