@@ -4,9 +4,11 @@
 {-# LANGUAGE OverloadedStrings  #-}
 module Development.Scion.Core where
 
+import Control.Exception ( Exception(..), SomeException )
+import Data.Aeson
 import Data.Binary ( Binary(..) )
 import Data.Monoid
-import Data.Aeson
+import Data.Typeable ( Typeable )
 import qualified Data.Text as T
 
 import GHC.Generics
@@ -52,3 +54,10 @@ data CompilationResult = CompilationResult
   , crFile                :: !FilePath
   , crMessages            :: [Message]
   }
+
+------------------------------------------------------------------------------
+
+data CabalError = CabalError String
+  deriving (Eq, Ord, Show, Typeable)
+
+instance Exception CabalError

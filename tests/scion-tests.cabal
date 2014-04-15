@@ -19,7 +19,10 @@ executable test
       base
     , scion-core
 
+    , canonical-filepath                == 1.0.*
+    , directory                         >= 1.1    && < 1.3
     , filepath                          >= 1.3 && < 1.4
+    , shake                             == 0.11.*
     , tasty                             >= 0.8 && < 0.9
     , tasty-hunit                       >= 0.8 && < 0.9
 
