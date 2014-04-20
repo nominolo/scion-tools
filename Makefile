@@ -9,10 +9,11 @@ SCION_CORE_VERSION := $(shell sed -n -e 's/^[Vv]ersion:[[:space:]]*\([0-9][0-9.]
 
 SCION_CORE=
 
-default: test
+# default: test
 
 # default: scion-core/dist/build/libHSscion-core-$(SCION_CORE_VERSION).a
 # default: scion-core/dist/setup-config
+default: scion-cabal/dist/build/scion-cabal/scion-cabal
 
 .PHONY: clean
 clean:
@@ -22,10 +23,10 @@ clean:
 ##############################################################################
 # scion-core
 
-cabal.sandbox.config:
+cabal.sandbox.config: 
 	$(CABAL) sandbox init
 
-scion-core/cabal.sandbox.config:
+scion-core/cabal.sandbox.config: cabal.sandbox.config
 	(cd scion-core ; $(CABAL) sandbox init --sandbox=../.cabal-sandbox)
 
 scion-core/dist/setup-config: scion-core/scion-core.cabal
@@ -43,9 +44,31 @@ dist/.scion-core-installed: scion-core/dist/build/libHSscion-core-$(SCION_CORE_V
 	@touch $@
 
 ##############################################################################
+# scion-cabal
+
+SCION_CABAL_FILES := $(shell find scion-cabal -name '*.hs')
+
+scion-cabal/cabal.sandbox.config: cabal.sandbox.config
+	(cd scion-cabal ; $(CABAL) sandbox init --sandbox=../.cabal-sandbox)
+
+scion-cabal/dist/setup-config: \
+		scion-cabal/cabal.sandbox.config \
+		dist/.scion-core-installed \
+		scion-cabal/scion-cabal.cabal
+	@echo "=== Configuring scion-cabal ==="
+	(cd scion-cabal; $(CABAL) install --only-dependencies && \
+	                 $(CABAL) configure)
+
+scion-cabal/dist/build/scion-cabal/scion-cabal: \
+		scion-cabal/dist/setup-config \
+		$(SCION_CABAL_FILES)
+	@echo "=== Building scion-cabal ==="
+	(cd scion-cabal; $(CABAL) build)
+
+##############################################################################
 # tests
 
-tests/cabal.sandbox.config:
+tests/cabal.sandbox.config: cabal.sandbox.config
 	(cd tests ; $(CABAL) sandbox init --sandbox=../.cabal-sandbox)
 
 tests/dist/setup-config: tests/scion-tests.cabal dist/.scion-core-installed tests/cabal.sandbox.config
