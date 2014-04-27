@@ -45,6 +45,10 @@ tests dispHdl =
           testCompile' "single-file/0003-undefined-var-primed2.hs" $ \ok msgs -> do
             ok @?= False
             msgs @?= [Message Error (SourceSpan 1 8 1 15) (NotInScope "zoo'bar'")]
+      , testCase "undefined-type" $ do
+          testCompile' "single-file/0004-undefined-type.hs" $ \ok msgs -> do
+            ok @?= False
+            msgs @?= [Message Error (SourceSpan 0 19 0 21) (NotInScope "Foo")]
       ]
     , testGroup "shake"
       [ testCase "configure" $ do
