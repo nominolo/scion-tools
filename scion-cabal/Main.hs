@@ -17,7 +17,6 @@ import           Options.Applicative
 import           System.Directory
 import           System.Exit
 import           System.FilePath
---import           System.FilePath.Canonical
 
 ------------------------------------------------------------------------------
 
@@ -91,23 +90,8 @@ execCommand opts = do
               -- TODO: parse flags properly
               }
 
-      --ioCatchExits $ do
       lbi <- configure (genPkgDescr, (Nothing, [])) configFlags
       writePersistBuildConfig distDir lbi
       initialBuildSteps distDir (Lbi.localPkgDescr lbi) lbi V.normal
 
       return ()
-{-
- where
-   ioCatchExits act =
-     act `catches`
-      [ Handler $ \(e :: ExitCode) -> do
-          let msg = "Failed to configure: " ++ show e
-          --addFileMetadata monit cabalFile CabalMeta [] [cabalErrorMsg msg]
-          throwIO $ CabalError msg
-      , Handler $ \(e :: IOException) -> do
-          let msg = "Failed to configure: " ++ show e
-          --addFileMetadata monit cabalFile CabalMeta [] [cabalErrorMsg msg]
-          throwIO $ CabalError msg
-      ]
--}    

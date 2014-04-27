@@ -4,11 +4,11 @@ module Development.Scion.Utils.IO where
 import Development.Scion.Dispatcher
 
 import Control.Applicative
-import Control.Concurrent.STM
 import Control.Concurrent.Async
+import Control.Concurrent.STM
 import Control.Exception ( handle, SomeException )
-import qualified Data.ByteString.Char8 as BC8
 import System.IO ( Handle )
+import qualified Data.ByteString.Char8 as BC8
 
 ------------------------------------------------------------------------------
 

@@ -11,12 +11,9 @@ import Prelude hiding ( lines )
 import Control.Applicative
 import Control.Concurrent.Async
 import Control.Concurrent.STM
---import Control.Exception ( handle, SomeException )
 import Control.Monad
 import Data.Attoparsec.Char8 as Atto
---import System.IO ( Handle )
 import System.Exit
---import System.FilePath
 import System.Process
 import qualified Data.ByteString.Char8 as BC8
 import qualified Data.Text as T

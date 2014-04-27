@@ -1,28 +1,14 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Development.Scion.Cabal where
 
---import           Development.Scion.Core
 import           Development.Scion.Dispatcher
 import           Development.Scion.Utils.IO
 
---import           Control.Exception
 import           Control.Monad
 import           Development.Shake
--- import qualified Distribution.PackageDescription.Parse as PD
--- import qualified Distribution.PackageDescription as PD
--- import           Distribution.Simple.Build ( initialBuildSteps )
--- import           Distribution.Simple.Configure
--- import qualified Distribution.Simple.LocalBuildInfo as Lbi
--- import           Distribution.Simple.Program
--- import           Distribution.Simple.Program.GHC ( GhcOptions(..),
---                    renderGhcOptions, GhcMode(..), GhcOptimisation(..) )
--- import           Distribution.Simple.Setup ( defaultConfigFlags,
---                      ConfigFlags(..), Flag(..) )
--- import qualified Distribution.Verbosity as V
 import           Control.Concurrent.Async
 import           System.FilePath
 import           System.Exit
---import           System.FilePath
 import           System.FilePath.Canonical
 import           System.Process
 ------------------------------------------------------------------------------
@@ -62,42 +48,6 @@ configureCabalProject hdl cabalFile distDir = do
     _ <- wait aErr
 
     return $! exitCode == ExitSuccess
-
-{-
-
-  genPkgDescr <- liftIO $ PD.readPackageDescription V.silent cabalFile
-
-  let progConf = defaultProgramConfiguration
-
-  let configFlags =
-        (defaultConfigFlags progConf)
-          { configDistPref    = Flag distDir
-          , configVerbosity   = Flag V.normal
-          , configUserInstall = Flag True
-          -- TODO: parse flags properly
-          }
-
-  ioCatchExits $ do
-    lbi <- configure (genPkgDescr, (Nothing, [])) configFlags
-    writePersistBuildConfig distDir lbi
-    initialBuildSteps distDir (Lbi.localPkgDescr lbi) lbi V.normal
-
-  return ()
-
- where
-   ioCatchExits act = liftIO $
-     act `catches`
-      [ Handler $ \(e :: ExitCode) -> do
-          let msg = "Failed to configure: " ++ show e
-          --addFileMetadata monit cabalFile CabalMeta [] [cabalErrorMsg msg]
-          throwIO $ CabalError msg
-      , Handler $ \(e :: IOException) -> do
-          let msg = "Failed to configure: " ++ show e
-          --addFileMetadata monit cabalFile CabalMeta [] [cabalErrorMsg msg]
-          throwIO $ CabalError msg
-      ]
-
--}
 
 ------------------------------------------------------------------------------
 

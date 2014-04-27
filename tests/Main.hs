@@ -52,12 +52,9 @@ tests dispHdl =
       ]
     , testGroup "shake"
       [ testCase "configure" $ do
-          -- TODO: Remove .scion and .shake.database
           cleanProject "projects/hello"
           testShake dispHdl "projects/hello" "hello.cabal"
-          -- TODO: Check that .scion/setup-config exists
           assertFileExists "projects/hello/.scion/setup-config"
-          -- "TODO" @?= "Implement me"
       -- TODO: Add tests for various Cabal failures (parse error, dependency not
       -- found, ...)
       ]
