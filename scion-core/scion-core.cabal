@@ -34,8 +34,12 @@ library
 
   exposed-modules:
     Development.Scion.Cabal
+    Development.Scion.Compile
     Development.Scion.Core
     Development.Scion.Dispatcher
+
+  other-modules:
+    Development.Scion.Utils.IO
 
   ghc-options: -Wall -with-rtsopts=-threaded
   ghc-prof-options: -prof -auto-all

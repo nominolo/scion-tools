@@ -4,10 +4,12 @@ module Main where
 import Development.Scion.Cabal
 import Development.Scion.Core
 import Development.Scion.Dispatcher
+import Development.Scion.Compile
 
 import Control.Applicative
-import Development.Shake
-import System.Directory
+import Control.Monad
+import Development.Shake as Shake
+import System.Directory as Dir
 import System.FilePath
 import System.FilePath.Canonical
 import Test.Tasty
@@ -19,7 +21,9 @@ main = do
    defaultMain (tests dispHdl)
  where
    dispCfg = DispatcherConfig
-     { dcGhcExecutable = "ghc" }
+     { dcGhcExecutable = "ghc"
+     , dcScionCabal = "scion-cabal/dist/build/scion-cabal/scion-cabal"
+     }
 
 tests :: DispatcherHandle -> TestTree
 tests dispHdl =
@@ -45,9 +49,11 @@ tests dispHdl =
     , testGroup "shake"
       [ testCase "configure" $ do
           -- TODO: Remove .scion and .shake.database
-          testShake "projects/hello" "hello.cabal"
+          cleanProject "projects/hello"
+          testShake dispHdl "projects/hello" "hello.cabal"
           -- TODO: Check that .scion/setup-config exists
-          "TODO" @?= "Implement me"
+          assertFileExists "projects/hello/.scion/setup-config"
+          -- "TODO" @?= "Implement me"
       -- TODO: Add tests for various Cabal failures (parse error, dependency not
       -- found, ...)
       ]
@@ -66,18 +72,26 @@ testCompile dispHdl file check = do
 
 ------------------------------------------------------------------------------
 
-testShake :: FilePath -> FilePath -> IO ()
-testShake projectDir0 cabalFile0 = do
+assertFileExists :: FilePath -> IO ()
+assertFileExists file = do
+  ok <- Dir.doesFileExist ("tests/data" </> file)
+  assertBool ("File exists: " ++ file) ok 
+
+cleanProject :: FilePath -> IO ()
+cleanProject projectDir = do
+  let dir = "tests/data" </> projectDir </> ".scion"
+  ex <- Dir.doesDirectoryExist dir
+  when ex $ removeDirectoryRecursive dir
+
+------------------------------------------------------------------------------
+
+testShake :: DispatcherHandle -> FilePath -> FilePath -> IO ()
+testShake dispHdl projectDir0 cabalFile0 = do
   let projectDir = "tests" </> "data" </> projectDir0
   workDir <- canonical projectDir
   conf <- CabalConfig <$> canonical (projectDir </> ".scion")
                       <*> canonical (projectDir </> cabalFile0)
                       <*> pure workDir
-  -- TODO: The shake rules should call Cabal in a separate process to avoid
-  -- modifying the workingDir
-  wd <- getCurrentDirectory
-  setCurrentDirectory (canonicalFilePath workDir)
   shake shakeOptions $ do
-    cabalRules conf
+    cabalRules conf dispHdl
     want [dist conf "/setup-config"]
-  setCurrentDirectory wd
