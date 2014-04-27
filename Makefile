@@ -11,6 +11,9 @@ SCION_CORE=
 
 # default: test
 
+.PHONY: lib
+lib: scion-core/dist/build/libHSscion-core-$(SCION_CORE_VERSION).a
+
 # default: scion-core/dist/build/libHSscion-core-$(SCION_CORE_VERSION).a
 # default: scion-core/dist/setup-config
 default: scion-cabal/dist/build/scion-cabal/scion-cabal
