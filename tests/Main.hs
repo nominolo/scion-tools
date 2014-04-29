@@ -66,10 +66,12 @@ testCompile :: DispatcherHandle
             -> FilePath
             -> (Bool -> [Message] -> IO ()) -> IO ()
 testCompile dispHdl file check = do
-  rslt <- compileFile dispHdl ("tests/data" </> file)  ["-c", "-fforce-recomp"]
+  rslt <- compileFile dispHdl ("tests/data" </> file) opts ["-c", "-fforce-recomp"]
   case rslt of
     Left err -> fail $ show err
     Right rslt -> check (crSuccess rslt) (crMessages rslt)
+ where
+   opts = CompilerOptions Nothing
 
 ------------------------------------------------------------------------------
 

@@ -21,20 +21,28 @@ import qualified Data.Text.Encoding as T
 
 ------------------------------------------------------------------------------
 
+data CompilerOptions = CompilerOptions
+  { coOutputDir :: !(Maybe FilePath)
+  }
 
 -- TODO: Maybe args should be location annotated, so we can report where a
 -- particular flag came from.  E.g., from the .cabal file.
 
 compileFile :: DispatcherHandle   -- ^ Dispatcher handle
             -> FilePath -- ^ Source file to compile
+            -> CompilerOptions
             -> [String] -- ^ Compiler flags
             -> IO (Either DispatcherError CompilationResult)
-compileFile hdl sourceFile flags = do
+compileFile hdl sourceFile opts flags = do
   let cfg = dhConfig hdl
 
   (_inp, out, err, pHdl)
       <- runInteractiveProcess (dcGhcExecutable cfg)
-                               (flags ++ ["-ferror-spans", sourceFile])
+                               (flags ++
+                                (case coOutputDir opts of
+                                   Nothing -> []
+                                   Just fp -> ["-odir", fp]) ++
+                                [ "-ferror-spans", sourceFile])
                                Nothing -- no custom working dir
                                Nothing -- inherit environment
 
@@ -48,6 +56,8 @@ compileFile hdl sourceFile flags = do
   -- TODO: Add some kind of timeout
   _ <- wait aOut
   messages <- wait aErr
+
+  -- TODO: Put error messages into .meta file
 
   let rslt = CompilationResult{ crSuccess = exitCode == ExitSuccess
                               , crFile = sourceFile
