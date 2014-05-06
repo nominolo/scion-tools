@@ -37,9 +37,8 @@ library
     Development.Scion.Compile
     Development.Scion.Core
     Development.Scion.Dispatcher
-
-  other-modules:
+    Development.Scion.WorkerMessage
     Development.Scion.Utils.IO
 
-  ghc-options: -Wall -with-rtsopts=-threaded
+  ghc-options: -Wall -threaded -with-rtsopts=-T
   ghc-prof-options: -prof -auto-all

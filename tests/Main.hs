@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
+import Development.Scion.Utils.IO
 import Development.Scion.Cabal
 import Development.Scion.Core
 import Development.Scion.Dispatcher
@@ -17,7 +18,8 @@ import Test.Tasty.HUnit
 
 main :: IO ()
 main = do
-   dispHdl <- newDispatcherHandle dispCfg
+   logger <- newLoggerHandle
+   dispHdl <- newDispatcherHandle dispCfg logger
    defaultMain (tests dispHdl)
  where
    dispCfg = DispatcherConfig
@@ -57,6 +59,11 @@ tests dispHdl =
           assertFileExists "projects/hello/.scion/setup-config"
       -- TODO: Add tests for various Cabal failures (parse error, dependency not
       -- found, ...)
+      ]
+    , testGroup "worker"
+      [ testCase "start" $ do
+          Right wh <- startWorker dispHdl "scion-ghc/dist/build/scion-ghc/scion-ghc"
+          return ()
       ]
     ]
  where

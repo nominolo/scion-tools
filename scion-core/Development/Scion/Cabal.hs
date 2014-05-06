@@ -40,7 +40,7 @@ configureCabalProject hdl cabalFile distDir = do
             Nothing
 
     (aOut, aErr) <- captureProcessOutput out err
-                      (printOutput hdl) (printOutput hdl)
+                      (printOutput (dhLogger hdl)) (printOutput (dhLogger hdl))
 
     exitCode <- waitForProcess pHdl
 

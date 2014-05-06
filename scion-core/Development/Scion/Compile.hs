@@ -46,7 +46,7 @@ compileFile hdl sourceFile opts flags = do
                                Nothing -- no custom working dir
                                Nothing -- inherit environment
 
-  (aOut, aErr) <- captureProcessOutput out err (printOutput hdl) $ \qErr -> do
+  (aOut, aErr) <- captureProcessOutput out err (printOutput (dhLogger hdl)) $ \qErr -> do
                     qMsgs <- newTQueueIO
                     findMsgs <- async (parseErrors sourceFile qErr qMsgs)
                     collectMessages qMsgs [] <* wait findMsgs
