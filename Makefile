@@ -6,6 +6,7 @@ CABAL ?= cabal
 DIST  ?= dist
 
 SCION_CORE_VERSION := $(shell sed -n -e 's/^[Vv]ersion:[[:space:]]*\([0-9][0-9.]*\)/\1/p' scion-core/scion-core.cabal)
+SCION_IPC_VERSION := $(shell sed -n -e 's/^[Vv]ersion:[[:space:]]*\([0-9][0-9.]*\)/\1/p' scion-ipc/scion-ipc.cabal)
 
 # Set up colours. TODO: Detect colour support first (E.g., build bot might not support them)
 CRESET="\\033[0m"
@@ -29,6 +30,36 @@ clean:
 	(rm -r dist)
 
 ##############################################################################
+# Sandbox
+
+cabal.sandbox.config: 
+	$(CABAL) sandbox init
+
+##############################################################################
+# scion-ipc
+
+SCION_IPC=scion-ipc/dist/build/libHSscion-ipc-$(SCION_IPC_VERSION).a
+
+scion-ipc/cabal.sandbox.config: cabal.sandbox.config
+	(cd scion-ipc ; $(CABAL) sandbox init --sandbox=../.cabal-sandbox)
+
+scion-ipc/dist/setup-config: scion-ipc/scion-ipc.cabal
+	@echo "$(CBLUE)=== Configuring $(CBOLD)scion-ipc$(CRESET)$(CBLUE) ===$(CRESET)"
+	(cd scion-ipc; $(CABAL) install --only-dependencies && cabal configure --builddir=dist)
+
+SCION_IPC_FILES := $(shell find scion-ipc -name '*.hs')
+
+$(SCION_IPC): scion-ipc/dist/setup-config $(SCION_IPC_FILES)
+	@echo "$(CBLUE)=== Building $(CBOLD)scion-ipc$(CRESET)$(CBLUE) ===$(CRESET)"
+	(cd scion-ipc; $(CABAL) build --builddir=dist)
+
+ dist/.scion-ipc-installed: scion-ipc/dist/build/libHSscion-ipc-$(SCION_IPC_VERSION).a
+	@echo "$(CBLUE)=== Registering $(CBOLD)scion-ipc$(CRESET)$(CBLUE) ===$(CRESET)"
+	(cd scion-ipc; $(CABAL) register --inplace --builddir=dist)
+	@mkdir -p dist/
+	@touch $@
+
+##############################################################################
 # scion-core
 
 SCION_CORE=scion-core/dist/build/libHSscion-core-$(SCION_CORE_VERSION).a
@@ -36,13 +67,10 @@ SCION_CORE=scion-core/dist/build/libHSscion-core-$(SCION_CORE_VERSION).a
 .PHONY: lib
 lib: ${SCION_CORE}
 
-cabal.sandbox.config: 
-	$(CABAL) sandbox init
-
 scion-core/cabal.sandbox.config: cabal.sandbox.config
 	(cd scion-core ; $(CABAL) sandbox init --sandbox=../.cabal-sandbox)
 
-scion-core/dist/setup-config: scion-core/scion-core.cabal
+scion-core/dist/setup-config: scion-core/scion-core.cabal ${SCION_IPC}
 	@echo "$(CBLUE)=== Configuring $(CBOLD)scion-core$(CRESET)$(CBLUE) ===$(CRESET)"
 	(cd scion-core; $(CABAL) install --only-dependencies && cabal configure --builddir=dist)
 
@@ -57,6 +85,7 @@ dist/.scion-core-installed: scion-core/dist/build/libHSscion-core-$(SCION_CORE_V
 	(cd scion-core; $(CABAL) register --inplace --builddir=dist)
 	@mkdir -p dist/
 	@touch $@
+
 
 ##############################################################################
 # scion-cabal
@@ -105,8 +134,7 @@ scion-ghc/dist/setup-config: \
 		dist/.scion-core-installed \
 		scion-ghc/scion-ghc.cabal
 	@echo "$(CYELLOW)=== Configuring $(CBOLD)scion-ghc$(CRESET)$(CYELLOW) ===$(CRESET)"
-	(cd scion-ghc; $(CABAL) install --only-dependencies && \
-	                 $(CABAL) configure --builddir=dist)
+	(cd scion-ghc; $(CABAL) configure --builddir=dist)
 
 $(SCION_GHC): scion-ghc/dist/setup-config \
 	      $(SCION_GHC_FILES)
