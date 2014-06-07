@@ -6,9 +6,11 @@ import Development.Scion.Cabal
 import Development.Scion.Core
 import Development.Scion.Dispatcher
 import Development.Scion.Compile
+import Development.Scion.Types
 
 import Control.Applicative
 import Control.Monad
+import Data.List (sort)
 import Development.Shake as Shake
 import System.Directory as Dir
 import System.FilePath
@@ -63,7 +65,27 @@ tests dispHdl =
     , testGroup "worker"
       [ testCase "start" $ do
           Right wh <- startWorker dispHdl "scion-ghc/dist/build/scion-ghc/scion-ghc"
+          Right (GhcWorkerReady _warns) <- workerIpc dispHdl wh $ InitGhcWorker []
           return ()
+
+      , testCase "options1" $ do
+          Right wh <- startWorker dispHdl "scion-ghc/dist/build/scion-ghc/scion-ghc"
+          Right (GhcWorkerReady _warns) <- workerIpc dispHdl wh $ InitGhcWorker []
+          Right (ParsedImports moduleHeader)
+            <- workerIpc dispHdl wh $ ParseImports $!
+                   "tests/data" </> "single-file/0005-language-pragma.hs"
+          moduleHeaderOptions moduleHeader @?= ["-XBangPatterns"]
+
+      , testCase "imports1" $ do
+          Right wh <- startWorker dispHdl "scion-ghc/dist/build/scion-ghc/scion-ghc"
+          Right (GhcWorkerReady _warns) <- workerIpc dispHdl wh $ InitGhcWorker []
+          Right (ParsedImports moduleHeader)
+            <- workerIpc dispHdl wh $ ParseImports $!
+                   "tests/data" </> "single-file/0006-imports1.hs"
+          let imports = moduleHeaderImports moduleHeader
+          sort (map importModuleName imports)
+            @?= sort [mkModuleName "Data.List", mkModuleName "Prelude"]
+
       ]
     ]
  where

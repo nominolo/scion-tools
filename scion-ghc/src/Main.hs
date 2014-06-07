@@ -5,6 +5,7 @@ import Development.Scion.Message
 import Development.Scion.Types
 --import Development.Scion.WorkerMessage
 
+import Control.Applicative
 import GHC.Paths (libdir)
 import System.IO
 import Control.Exception
@@ -18,6 +19,8 @@ import Outputable ( renderWithStyle, showPpr, Outputable, sdocWithDynFlags,
                     mkErrStyle, withPprStyle, showSDoc )
 import MonadUtils ( liftIO )
 import Exception ( ghandle )
+import HeaderInfo ( getOptionsFromFile, getOptions, getImports )
+import StringBuffer ( hGetStringBuffer )
 
 message :: String -> IO ()
 message m = putStrLn m >> hFlush stdout
@@ -33,6 +36,9 @@ main = do
 
   waitForInitCommand replyHandle
 
+workerVersion :: [Int]
+workerVersion = [0]
+
 waitForInitCommand :: Handle -> IO ()
 waitForInitCommand replyHandle = do
   messageOrErr <- recvMessage stdin
@@ -44,7 +50,7 @@ waitForInitCommand replyHandle = do
       --message $ "Got command: " ++ show cmd
       case cmd of
         GetWorkerVersion -> do
-          sendMessage replyHandle (WorkerVersion [0])
+          sendMessage replyHandle (WorkerVersion workerVersion)
           waitForInitCommand replyHandle
 
         InitGhcWorker flags -> do
@@ -60,7 +66,7 @@ waitForInitCommand replyHandle = do
 ghcWorkerMain :: Handle -> [T.Text] -> IO ()
 ghcWorkerMain replyHandle flags = do
 
-  let ghcLogger dflags severity span pprStyle msg = do
+  let ghcLogger dflags _severity _span pprStyle msg = do
         message $ renderWithStyle dflags msg pprStyle
 
   let args0 = map T.unpack flags
@@ -104,7 +110,7 @@ ghcWorkerMain replyHandle flags = do
         liftIO $ sendMessage replyHandle $
           GhcWorkerReady []
 
-    return ()
+        workerMainLoop replyHandle
 
 
 handleWorkerError :: Handle -> IO () -> IO ()
@@ -145,3 +151,63 @@ handleWorkerError replyHandle body = do
      hClose stderr
      hClose replyHandle
      exitWith (ExitFailure 1)
+
+------------------------------------------------------------------------------
+
+workerMainLoop :: Handle -> Ghc ()
+workerMainLoop replyHandle = do
+  messageOrErr <- liftIO $ recvMessage stdin
+  case messageOrErr of
+    Left err -> do
+      liftIO $ message err
+      return ()
+    Right cmd -> do
+      case cmd of
+        GetWorkerVersion -> do
+          reply $ WorkerVersion workerVersion
+          workerMainLoop replyHandle
+
+        ParseImports path -> do
+          ans <- ParsedImports <$> parseImports path
+          reply ans
+          workerMainLoop replyHandle
+
+ where
+   reply ans = liftIO $ sendMessage replyHandle ans
+
+------------------------------------------------------------------------------
+
+-- | Parse the imports and flags set via pragmas.
+parseImports :: FilePath -> Ghc ModuleHeader
+parseImports file = do
+  dflags <- getSessionDynFlags
+  liftIO $ do
+    -- HeaderInfo.getOptions is pure but may throw an exception when
+    -- the result is forced (WTF?!).  This reads the file twice, but
+    -- I'll take correctness over performance anytime.
+    options <- map (T.pack . unLoc) <$> getOptionsFromFile dflags file
+    buf <- hGetStringBuffer file
+    (source_imports, normal_imports, module_name0)
+      <- getImports dflags buf file file
+    let imports = map (mkImport True) source_imports ++
+                  map (mkImport False) normal_imports
+    return $! ModuleHeader
+      { moduleHeaderModuleName = ghcToModuleName (unLoc module_name0)
+      , moduleHeaderOptions = options
+      , moduleHeaderImports = imports
+      }
+ where
+   mkImport isSource imp0 =
+     let imp = unLoc imp0 in
+     ImportDependency
+       { importModuleName = ghcToModuleName (unLoc (ideclName imp))
+       , importPackageName = Nothing
+       , importSource = isSource
+       , importSafe = ideclSafe imp
+       }
+
+------------------------------------------------------------------------------
+
+ghcToModuleName :: Ghc.ModuleName -> ModuleName
+ghcToModuleName mn = mkModuleName (T.pack (moduleNameString mn))
+

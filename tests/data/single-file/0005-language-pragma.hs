@@ -1,0 +1,3 @@
+{-# LANGUAGE BangPatterns #-}
+
+main = return ()

@@ -18,6 +18,7 @@ executable test
   build-depends:
       base
     , scion-core
+    , scion-ipc
 
     , canonical-filepath                == 1.0.*
     , directory                         >= 1.1    && < 1.3

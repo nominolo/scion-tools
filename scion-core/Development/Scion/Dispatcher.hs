@@ -52,6 +52,7 @@ data WorkerHandle = WorkerHandle
   }
 
 data WorkerError = WorkerError String   -- for now
+  deriving Show
 
 startWorker :: DispatcherHandle -> FilePath
             -> IO (Either WorkerError WorkerHandle)
@@ -76,3 +77,16 @@ startWorker dh path = do
         return $ Left $ WorkerError $ "Unexpected worker version: " ++ show n
     Right ans ->
       return $ Left $ WorkerError $ "Unexpected worker response: " ++ show ans
+
+workerIpc :: DispatcherHandle -> WorkerHandle -> WorkerCommand
+          -> IO (Either WorkerError WorkerResponse)
+workerIpc _dispHdl workerHdl cmd = do
+  sendMessage (whStdin workerHdl) cmd
+  messageOrErr <- recvMessage (whStdout workerHdl)
+  case messageOrErr of
+    Left msg -> do
+      return (Left (WorkerError msg))
+    Right ans ->
+      return (Right ans)
+    -- Right ans ->
+    --   return $ Left $ WorkerError $ "Unexpected worker response: " ++ show ans
