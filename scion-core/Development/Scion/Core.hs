@@ -4,8 +4,9 @@
 {-# LANGUAGE OverloadedStrings  #-}
 module Development.Scion.Core where
 
+import Development.Scion.Binary
+
 import Control.Exception ( Exception(..), SomeException )
-import Data.Aeson
 import Data.Binary ( Binary(..) )
 import Data.Monoid
 import Data.Typeable ( Typeable )
@@ -20,7 +21,7 @@ import GHC.Generics
 data SourceSpan = SourceSpan !Int !Int !Int !Int
   deriving (Eq, Ord, Show, Generic)
 
-instance Binary SourceSpan
+instance Binary SourceSpan where put = genput; get = genget
 
 instance Monoid SourceSpan where
   mempty = SourceSpan 0 0 (-1) (-1)
@@ -29,9 +30,9 @@ instance Monoid SourceSpan where
    where (lmin, cmin) = min (l1, c1) (l3, c3)
          (lmax, cmax) = max (l2, c2) (l4, c4)
 
-instance ToJSON SourceSpan where
-  toJSON (SourceSpan l1 c1 l2 c2) =
-    object ["span" .= toJSON [l1, c1, l2, c2]]
+-- instance ToJSON SourceSpan where
+--   toJSON (SourceSpan l1 c1 l2 c2) =
+--     object ["span" .= toJSON [l1, c1, l2, c2]]
 
 ------------------------------------------------------------------------------
 
@@ -47,13 +48,19 @@ data MessageInfo
   | NotInScope !T.Text
   deriving (Eq, Ord, Show, Generic)
 
+instance Binary Severity    where put = genput; get = genget
+instance Binary MessageInfo where put = genput; get = genget
+instance Binary Message     where put = genput; get = genget
+
 ------------------------------------------------------------------------------
 
 data CompilationResult = CompilationResult
   { crSuccess             :: !Bool
   , crFile                :: !FilePath
   , crMessages            :: [Message]
-  }
+  } deriving (Eq, Ord, Show, Generic)
+
+instance Binary CompilationResult where put = genput; get = genget
 
 ------------------------------------------------------------------------------
 

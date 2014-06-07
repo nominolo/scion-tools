@@ -2,6 +2,7 @@
              TypeSynonymInstances, FlexibleInstances, FlexibleContexts,
              ScopedTypeVariables
   #-}
+{-# OPTIONS -fno-warn-orphans #-}
 -- | Support for GHC Generics (since 7.6) with older binary packages.
 --
 -- This module needs to be used both by programs that link against the GHC API
@@ -23,6 +24,12 @@ import Control.Applicative
 import Data.Binary
 import Data.Bits
 import GHC.Generics
+import Data.Text (Text)
+import qualified Data.Text.Encoding as T
+
+instance Binary Text where
+  get = T.decodeUtf8 <$> get
+  put t = put (T.encodeUtf8 t)
 
 genput :: (Generic t, GBinary2 (Rep t)) => t -> Put
 genput = gput2 . from

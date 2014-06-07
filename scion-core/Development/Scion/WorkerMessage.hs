@@ -3,8 +3,12 @@
  #-}
 module Development.Scion.WorkerMessage where
 
+{-
+import Development.Scion.Binary
+import Data.Binary
+
 import Control.Applicative
-import Data.Aeson
+--import Data.Aeson
 import Data.Int ( Int64 )
 --import Data.Monoid
 import GHC.Generics ( Generic )
@@ -17,24 +21,30 @@ import qualified Data.ByteString.Lazy.Char8 as BLC8
 
 data WorkerCommand
   = GetWorkerVersion
-  | InitWorker [T.Text]  -- GHC flags
+  | InitGhcWorker [T.Text]  -- GHC flags
   | ParseImports !FilePath
   deriving (Eq, Show, Generic)
 
-instance ToJSON WorkerCommand
-instance FromJSON WorkerCommand
+instance Binary WorkerCommand where put = genput; get = genget
+
+-- instance ToJSON WorkerCommand
+-- instance FromJSON WorkerCommand
 
 
 data WorkerResponse
   = WorkerVersion ![Int]
   | GhcWorkerReady [T.Text] -- warnings
+  | WorkerFailure !T.Text
   deriving (Eq, Show, Generic)
 
-instance ToJSON WorkerResponse
-instance FromJSON WorkerResponse
+instance Binary WorkerResponse where put = genput; get = genget
 
+-- instance ToJSON WorkerResponse
+-- instance FromJSON WorkerResponse
+-}
 ------------------------------------------------------------------------------
 
+{-
 encodeMessageLength :: Int64 -> BLC8.ByteString
 encodeMessageLength len =
   BLC8.pack (replicate (8 - length lenText) '0' ++ lenText)
@@ -60,3 +70,4 @@ recvMessageFromHandle hdl = do
   --hFlush stdout
   msg <- BLC8.hGet hdl len
   return $! eitherDecode msg
+-}

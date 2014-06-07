@@ -8,11 +8,8 @@ import Control.Concurrent.Async
 import Control.Concurrent.MVar
 import Control.Concurrent.STM
 import Control.Exception ( handle, SomeException )
-import Control.Monad ( when )
-import Data.Maybe ( isJust )
 import Data.Monoid
-import GHC.IO.Handle ( hDuplicateTo, hDuplicate )
-import System.IO ( Handle, hFlush, hGetEncoding, hSetBinaryMode )
+import System.IO ( Handle )
 import qualified Data.ByteString.Char8 as BC8
 
 ------------------------------------------------------------------------------
@@ -95,29 +92,3 @@ printOutputPrefixed lh prefix q = loop
        Nothing -> return ()
        Just l  -> safeLogLn lh (prefix <> l) >> loop
 
-------------------------------------------------------------------------------
-
--- | Ensure that the handle is in binary mode.
-ensureBinaryMode :: Handle -> IO ()
-ensureBinaryMode h = do
-  enc <- hGetEncoding h
-  when (isJust enc) $
-    hSetBinaryMode h True
-
--- | Get exclusive access to the first handle's resource.
---
--- Subsequent writes to the first handle are redirected to the second
--- handle.  The returned handle is an exclusive handle to the resource
--- initially held by the first handle.
-makeExclusive ::
-     Handle -- ^ The handle to the resource that we want exclusive
-            -- access to.
-  -> Handle -- ^ Anything written to the original handle will be
-            -- redirected to this one.
-  -> IO Handle -- ^ The exclusive handle.
-makeExclusive hexcl hredirect = do
-  hFlush hexcl
-  hFlush hredirect
-  hresult <- hDuplicate hexcl
-  hDuplicateTo hredirect hexcl
-  return hresult

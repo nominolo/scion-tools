@@ -1,13 +1,16 @@
 module Development.Scion.Message where
 
 import Control.Applicative
+import Control.Exception ( SomeException, try )
 import Control.Monad ( when )
 import Data.Binary
 import Data.Int ( Int64 )
+import Data.Maybe ( isJust )
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString.Lazy.Char8 as BLC8
-import System.IO ( Handle, hFlush )
+import GHC.IO.Handle ( hDuplicateTo, hDuplicate )
+import System.IO ( Handle, hFlush, hGetEncoding, hSetBinaryMode )
 
 sendMessage :: Binary a => Handle -> a -> IO ()
 sendMessage hdl message = do
@@ -35,11 +38,15 @@ sendMessage hdl message = do
        [ "Development.Scion.Message.sendMessage: binary encoding of"
        , "integers has changed. TODO: Use putWord8s" ]
 
-recvMessage :: Binary a => Handle -> IO a
-recvMessage hdl =
+recvMessage :: Binary a => Handle -> IO (Either String a)
+recvMessage hdl = do
   -- TODO: We want an IOStream-like parser (ie., continuations for partial
   -- results)
-  decode . BL.fromChunks <$> getChunks
+  rslt <- try $ decode . BL.fromChunks <$> getChunks
+  case rslt of
+    Left e -> return $! Left $! show (e :: SomeException)
+    Right a -> return $! Right a
+
  where
    getChunks = do
      len <- decode <$> BLC8.hGet hdl 8
@@ -48,3 +55,30 @@ recvMessage hdl =
        (c:) <$> getChunks
       else
        return []
+
+------------------------------------------------------------------------------
+
+-- | Ensure that the handle is in binary mode.
+ensureBinaryMode :: Handle -> IO ()
+ensureBinaryMode h = do
+  enc <- hGetEncoding h
+  when (isJust enc) $
+    hSetBinaryMode h True
+
+-- | Get exclusive access to the first handle's resource.
+--
+-- Subsequent writes to the first handle are redirected to the second
+-- handle.  The returned handle is an exclusive handle to the resource
+-- initially held by the first handle.
+makeExclusive ::
+     Handle -- ^ The handle to the resource that we want exclusive
+            -- access to.
+  -> Handle -- ^ Anything written to the original handle will be
+            -- redirected to this one.
+  -> IO Handle -- ^ The exclusive handle.
+makeExclusive hexcl hredirect = do
+  hFlush hexcl
+  hFlush hredirect
+  hresult <- hDuplicate hexcl
+  hDuplicateTo hredirect hexcl
+  return hresult

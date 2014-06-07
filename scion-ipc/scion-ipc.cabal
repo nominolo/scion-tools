@@ -19,6 +19,7 @@ library
 
       , binary                               >= 0.5    && < 0.8
       , bytestring                           < 0.10.1 || >= 0.10.4.0
+      , text                                 >= 0.10   && < 2
 
     -- , Cabal                             >= 1.18   && < 1.19
     -- , aeson                             >= 0.7    && < 0.8
@@ -38,6 +39,7 @@ library
   exposed-modules:
     Development.Scion.Binary
     Development.Scion.Message
+    Development.Scion.Types
     -- Development.Scion.WorkerMessage
     -- Development.Scion.Utils.IO
 

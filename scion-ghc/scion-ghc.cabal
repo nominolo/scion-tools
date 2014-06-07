@@ -21,13 +21,16 @@ executable scion-ghc
   build-depends:
       base
 
-    , scion-core                        == 0.9.*
+    , scion-ipc                         == 0.9.*
 
 --    , Cabal                             >= 1.18   && < 1.19
+--    , Cabal                             >= 1.16
     , directory                         >= 1.1    && < 1.3
     , filepath                          >= 1.3    && < 1.4
+    , ghc                               == 7.6.*
     , ghc-paths                         == 0.1.*
-    , optparse-applicative              >= 0.8    && < 0.9
+    , optparse-applicative              >= 0.8    && < 0.10
+    , text                              == 0.11.*
 
   ghc-options: -Wall -threaded -with-rtsopts=-T
   ghc-prof-options: -prof -auto-all

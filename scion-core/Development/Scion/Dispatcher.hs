@@ -13,7 +13,8 @@ import           System.IO
 import           System.Process
 
 
-import Development.Scion.WorkerMessage
+import Development.Scion.Types
+import Development.Scion.Message
 import Development.Scion.Utils.IO
 
 ------------------------------------------------------------------------------
@@ -63,8 +64,8 @@ startWorker dh path = do
   errRdr <- async $ captureOutput err qErr
   outputReader <- async $ printOutputPrefixed (dhLogger dh) "w: " qErr <* wait errRdr
 
-  sendMessageToHandle inp GetWorkerVersion
-  messageOrErr <- recvMessageFromHandle out
+  sendMessage inp GetWorkerVersion
+  messageOrErr <- recvMessage out
   case messageOrErr of
     Left msg -> do
       return (Left (WorkerError msg))

@@ -17,16 +17,16 @@ library
   build-depends:
       base
 
-    , Cabal                             >= 1.18   && < 1.19
-    , aeson                             >= 0.7    && < 0.8
+    , scion-ipc                         == 0.9
+
     , async                             >= 2.0    && < 2.1
-    , attoparsec                        >= 0.10   && < 0.11
-    , binary                            >= 0.7    && < 0.8
+    , attoparsec                        >= 0.10   && < 0.12
+    , binary                            >= 0.5    && < 0.8
     , bytestring                        < 0.10.1 || >= 0.10.4.0
     , canonical-filepath                == 1.0.*
     , directory                         >= 1.1    && < 1.3
     , filepath                          >= 1.3    && < 1.4
-    , process                           >= 1.2    && < 1.3
+    , process                           >= 1.1    && < 1.3
     , shake                             == 0.11.*
     , stm                               >= 2.4    && < 2.5
     , text                              >= 0.11   && < 1.2
@@ -37,8 +37,11 @@ library
     Development.Scion.Compile
     Development.Scion.Core
     Development.Scion.Dispatcher
-    Development.Scion.WorkerMessage
+    --Development.Scion.WorkerMessage
     Development.Scion.Utils.IO
 
   ghc-options: -Wall -threaded -with-rtsopts=-T
   ghc-prof-options: -prof -auto-all
+
+    -- , Cabal                             >= 1.18   && < 1.19
+    -- , aeson                             >= 0.7    && < 0.8
