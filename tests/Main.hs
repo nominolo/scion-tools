@@ -27,6 +27,7 @@ main = do
    dispCfg = DispatcherConfig
      { dcGhcExecutable = "ghc"
      , dcScionCabal = "scion-cabal/dist/build/scion-cabal/scion-cabal"
+     , dcGhcWorker = "scion-ghc/dist/build/scion-ghc/scion-ghc"
      }
 
 tests :: DispatcherHandle -> TestTree
@@ -86,6 +87,14 @@ tests dispHdl =
           sort (map importModuleName imports)
             @?= sort [mkModuleName "Data.List", mkModuleName "Prelude"]
 
+      , testCase "options-err1" $ do
+          return ()
+      ]
+    , testGroup "dispatcher"
+      [ testCase "getImports" $ do
+          let src = "tests/data" </> "single-file/0005-language-pragma.hs"
+          Right moduleHeader <- getImports dispHdl src
+          moduleHeaderOptions moduleHeader @?= ["-XBangPatterns"]
       ]
     ]
  where
