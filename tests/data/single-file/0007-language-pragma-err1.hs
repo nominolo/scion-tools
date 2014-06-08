@@ -1,0 +1,2 @@
+{-# LANGUAGE foo #-}
+main = return ()

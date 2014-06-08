@@ -63,14 +63,14 @@ tests dispHdl =
       -- TODO: Add tests for various Cabal failures (parse error, dependency not
       -- found, ...)
       ]
-    , testGroup "worker"
+    , testGroup "ghc-worker"
       [ testCase "start" $ do
-          Right wh <- startWorker dispHdl "scion-ghc/dist/build/scion-ghc/scion-ghc"
+          Right wh <- startGhcWorker dispHdl
           Right (GhcWorkerReady _warns) <- workerIpc dispHdl wh $ InitGhcWorker []
           return ()
 
       , testCase "options1" $ do
-          Right wh <- startWorker dispHdl "scion-ghc/dist/build/scion-ghc/scion-ghc"
+          Right wh <- startGhcWorker dispHdl
           Right (GhcWorkerReady _warns) <- workerIpc dispHdl wh $ InitGhcWorker []
           Right (ParsedImports moduleHeader)
             <- workerIpc dispHdl wh $ ParseImports $!
@@ -78,7 +78,7 @@ tests dispHdl =
           moduleHeaderOptions moduleHeader @?= ["-XBangPatterns"]
 
       , testCase "imports1" $ do
-          Right wh <- startWorker dispHdl "scion-ghc/dist/build/scion-ghc/scion-ghc"
+          Right wh <- startGhcWorker dispHdl
           Right (GhcWorkerReady _warns) <- workerIpc dispHdl wh $ InitGhcWorker []
           Right (ParsedImports moduleHeader)
             <- workerIpc dispHdl wh $ ParseImports $!
@@ -91,14 +91,20 @@ tests dispHdl =
           return ()
       ]
     , testGroup "dispatcher"
-      [ testCase "getImports" $ do
+      [ testCase "getImports_options1" $ do
           let src = "tests/data" </> "single-file/0005-language-pragma.hs"
           Right moduleHeader <- getImports dispHdl src
           moduleHeaderOptions moduleHeader @?= ["-XBangPatterns"]
+      , testCase "getImports_options_err1" $ do
+          let src = "tests/data" </> "single-file/0007-language-pragma-err1.hs"
+          Right moduleHeader <- getImports dispHdl src
+          print moduleHeader
       ]
     ]
  where
    testCompile' = testCompile dispHdl
+
+------------------------------------------------------------------------------
 
 testCompile :: DispatcherHandle
             -> FilePath
@@ -110,6 +116,9 @@ testCompile dispHdl file check = do
     Right rslt -> check (crSuccess rslt) (crMessages rslt)
  where
    opts = CompilerOptions Nothing
+
+------------------------------------------------------------------------------
+
 
 ------------------------------------------------------------------------------
 

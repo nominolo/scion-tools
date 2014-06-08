@@ -82,6 +82,11 @@ startWorker dh path = do
     Right ans ->
       return $ Left $ DispatcherError $ "Unexpected worker response: " ++ show ans
 
+startGhcWorker :: DispatcherHandle -> IO (Either DispatcherError WorkerHandle)
+startGhcWorker dh = startWorker dh (dcGhcWorker (dhConfig dh))
+
+------------------------------------------------------------------------------
+
 workerIpc :: DispatcherHandle -> WorkerHandle -> WorkerCommand
           -> IO (Either DispatcherError WorkerResponse)
 workerIpc _dispHdl workerHdl cmd = do
@@ -103,7 +108,7 @@ getImportParser dispHdl = do
   case mbHdl of
     Just wh -> return (Right wh)
     Nothing -> do
-      errOrWorker <- startWorker dispHdl (dcGhcWorker (dhConfig dispHdl))
+      errOrWorker <- startGhcWorker dispHdl
       case errOrWorker of
         Left err -> return $ Left $ DispatcherError $
                       "Could not start worker: " <> show err
