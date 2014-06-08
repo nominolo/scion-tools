@@ -55,14 +55,6 @@ tests dispHdl =
             ok @?= False
             msgs @?= [Message Error (SourceSpan 0 19 0 21) (NotInScope "Foo")]
       ]
-    , testGroup "shake"
-      [ testCase "configure" $ do
-          cleanProject "projects/hello"
-          testShake dispHdl "projects/hello" "hello.cabal"
-          assertFileExists "projects/hello/.scion/setup-config"
-      -- TODO: Add tests for various Cabal failures (parse error, dependency not
-      -- found, ...)
-      ]
     , testGroup "ghc-worker"
       [ testCase "start" $ do
           Right wh <- startGhcWorker dispHdl
@@ -102,6 +94,14 @@ tests dispHdl =
           let err:_ = errs
           msgSeverity err @?= Error
           msgSpan err @?= SourceSpan 0 13 0 16
+      ]
+    , testGroup "shake"
+      [ testCase "configure" $ do
+          cleanProject "projects/hello"
+          testShake dispHdl "projects/hello" "hello.cabal"
+          assertFileExists "projects/hello/.scion/setup-config"
+      -- TODO: Add tests for various Cabal failures (parse error, dependency not
+      -- found, ...)
       ]
     ]
  where
