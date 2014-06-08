@@ -60,6 +60,9 @@ waitForInitCommand replyHandle = do
         InitGhcWorker flags -> do
           ghcWorkerMain replyHandle flags
 
+        StopWorker ->
+          return ()
+
         _ -> do
           sendMessage replyHandle $
             WorkerFailure "Worker not initialised"
@@ -179,6 +182,12 @@ workerMainLoop replyHandle = do
             Right moduleHeader ->
               reply $! ParsedImports moduleHeader
           workerMainLoop replyHandle
+
+        StopWorker ->
+          return ()
+
+        _ ->
+          reply (WorkerFailure "Unknown worker command")
 
  where
    reply ans = liftIO $ sendMessage replyHandle ans

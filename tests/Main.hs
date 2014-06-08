@@ -59,7 +59,7 @@ tests dispHdl =
       [ testCase "start" $ do
           Right wh <- startGhcWorker dispHdl
           Right (GhcWorkerReady _warns) <- workerIpc dispHdl wh $ InitGhcWorker []
-          return ()
+          stopWorker dispHdl wh Nothing
 
       , testCase "options1" $ do
           Right wh <- startGhcWorker dispHdl
@@ -68,6 +68,7 @@ tests dispHdl =
             <- workerIpc dispHdl wh $ ParseImports $!
                    "tests/data" </> "single-file/0005-language-pragma.hs"
           moduleHeaderOptions moduleHeader @?= ["-XBangPatterns"]
+          stopWorker dispHdl wh Nothing
 
       , testCase "imports1" $ do
           Right wh <- startGhcWorker dispHdl
@@ -78,9 +79,7 @@ tests dispHdl =
           let imports = moduleHeaderImports moduleHeader
           sort (map importModuleName imports)
             @?= sort [mkModuleName "Data.List", mkModuleName "Prelude"]
-
-      , testCase "options-err1" $ do
-          return ()
+          stopWorker dispHdl wh Nothing
       ]
     , testGroup "dispatcher"
       [ testCase "getImports_options1" $ do

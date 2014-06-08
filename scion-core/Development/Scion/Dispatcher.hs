@@ -87,6 +87,16 @@ startGhcWorker dh = startWorker dh (dcGhcWorker (dhConfig dh))
 
 ------------------------------------------------------------------------------
 
+type TimeOutMilliseconds = Integer
+
+stopWorker :: DispatcherHandle -> WorkerHandle -> Maybe TimeOutMilliseconds
+           -> IO ()  -- TODO: Return MVar to wait on finish?
+stopWorker _dispHdl workerHdl _timeout = do
+  -- TODO: Kill process after timeout
+  sendMessage (whStdin workerHdl) StopWorker
+
+------------------------------------------------------------------------------
+
 workerIpc :: DispatcherHandle -> WorkerHandle -> WorkerCommand
           -> IO (Either DispatcherError WorkerResponse)
 workerIpc _dispHdl workerHdl cmd = do

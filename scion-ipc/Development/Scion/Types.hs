@@ -21,6 +21,7 @@ data WorkerCommand
   = GetWorkerVersion
   | InitGhcWorker [T.Text]  -- GHC flags
   | ParseImports !FilePath
+  | StopWorker
   deriving (Eq, Show, Generic)
 
 instance Binary WorkerCommand where put = genput; get = genget
