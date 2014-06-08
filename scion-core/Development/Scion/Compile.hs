@@ -3,6 +3,7 @@
 module Development.Scion.Compile where
 
 import Development.Scion.Core
+import Development.Scion.Types
 import Development.Scion.Dispatcher
 import Development.Scion.Utils.IO
 

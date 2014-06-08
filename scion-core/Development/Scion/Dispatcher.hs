@@ -126,7 +126,7 @@ getImportParser dispHdl = do
 ------------------------------------------------------------------------------
 
 getImports :: DispatcherHandle -> FilePath
-           -> IO (Either DispatcherError ModuleHeader)
+           -> IO (Either DispatcherError (Either [Message] ModuleHeader))
 getImports dispHdl file = do
   optWorker <- getImportParser dispHdl
   case optWorker of
@@ -135,7 +135,9 @@ getImports dispHdl file = do
       ans <- workerIpc dispHdl h $! ParseImports file
       case ans of
         Right (ParsedImports hdr) ->
-          return $! Right hdr
+          return $! Right (Right hdr)
+        Right (SourceErrors errs) ->
+          return $! Right (Left errs)
         Left err ->
           return $! Left err
         _ ->

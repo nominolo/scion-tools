@@ -93,12 +93,15 @@ tests dispHdl =
     , testGroup "dispatcher"
       [ testCase "getImports_options1" $ do
           let src = "tests/data" </> "single-file/0005-language-pragma.hs"
-          Right moduleHeader <- getImports dispHdl src
+          Right (Right moduleHeader) <- getImports dispHdl src
           moduleHeaderOptions moduleHeader @?= ["-XBangPatterns"]
       , testCase "getImports_options_err1" $ do
           let src = "tests/data" </> "single-file/0007-language-pragma-err1.hs"
-          Right moduleHeader <- getImports dispHdl src
-          print moduleHeader
+          Right (Left errs) <- getImports dispHdl src
+          length errs @?= 1
+          let err:_ = errs
+          msgSeverity err @?= Error
+          msgSpan err @?= SourceSpan 0 13 0 16
       ]
     ]
  where

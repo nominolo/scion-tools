@@ -6,12 +6,13 @@ module Development.Scion.Types where
 import Development.Scion.Binary
 import Data.Binary
 
-import Control.Applicative
-import Data.Int ( Int64 )
+--import Control.Applicative
+--import Data.Int ( Int64 )
+import Data.Monoid
 import GHC.Generics ( Generic )
-import System.IO
+--import System.IO
 import qualified Data.Text as T
-import qualified Data.ByteString.Lazy.Char8 as BLC8
+--import qualified Data.ByteString.Lazy.Char8 as BLC8
 
 ------------------------------------------------------------------------------
 
@@ -32,6 +33,7 @@ data WorkerResponse
   | GhcWorkerReady [T.Text] -- warnings
   | WorkerFailure !T.Text
   | ParsedImports !ModuleHeader
+  | SourceErrors [Message]
   deriving (Eq, Show, Generic)
 
 instance Binary WorkerResponse where put = genput; get = genget
@@ -82,4 +84,47 @@ data ModuleHeader = ModuleHeader
 
 instance Binary ModuleHeader where put = genput; get = genget
 
+------------------------------------------------------------------------------
+
+-- | A range in the source program.  Both line and column indexes are
+-- zero-based, i.e., @(0, 0)@ is the first position in every text file.
+data SourceSpan = SourceSpan {-# UNPACK #-} !Int {-# UNPACK #-} !Int
+                             {-# UNPACK #-} !Int {-# UNPACK #-} !Int
+  deriving (Eq, Ord, Show, Generic)
+
+instance Binary SourceSpan where put = genput; get = genget
+
+instance Monoid SourceSpan where
+  mempty = SourceSpan 0 0 (-1) (-1)
+  mappend (SourceSpan l1 c1 l2 c2) (SourceSpan l3 c3 l4 c4) =
+    SourceSpan lmin cmin lmax cmax
+   where (lmin, cmin) = min (l1, c1) (l3, c3)
+         (lmax, cmax) = max (l2, c2) (l4, c4)
+
+-- instance ToJSON SourceSpan where
+--   toJSON (SourceSpan l1 c1 l2 c2) =
+--     object ["span" .= toJSON [l1, c1, l2, c2]]
+
+------------------------------------------------------------------------------
+
+data Severity = Warning | Error
+  deriving (Eq, Ord, Show, Generic)
+
+-- | An error message produced by a tool.
+data Message = Message
+  { msgSeverity :: !Severity
+  , msgSpan     :: !SourceSpan
+  , msgInfo     :: !MessageInfo
+  } deriving (Eq, Ord, Show, Generic)
+
+data MessageInfo
+  = OtherMessage !T.Text
+  | NotInScope !T.Text
+  deriving (Eq, Ord, Show, Generic)
+
+instance Binary Severity    where put = genput; get = genget
+instance Binary MessageInfo where put = genput; get = genget
+instance Binary Message     where put = genput; get = genget
+
+------------------------------------------------------------------------------
 

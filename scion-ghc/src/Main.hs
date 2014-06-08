@@ -10,6 +10,7 @@ import GHC.Paths (libdir)
 import System.IO
 import Control.Exception
 import Control.Concurrent ( threadDelay )
+import Data.Monoid
 import System.Exit
 import qualified Data.Text as T
 
@@ -21,6 +22,9 @@ import MonadUtils ( liftIO )
 import Exception ( ghandle )
 import HeaderInfo ( getOptionsFromFile, getOptions, getImports )
 import StringBuffer ( hGetStringBuffer )
+import ErrUtils (ErrMsg, errMsgContext, errMsgShortDoc, errMsgSpans)
+import HscTypes (srcErrorMessages)
+import Bag (bagToList)
 
 message :: String -> IO ()
 message m = putStrLn m >> hFlush stdout
@@ -168,8 +172,12 @@ workerMainLoop replyHandle = do
           workerMainLoop replyHandle
 
         ParseImports path -> do
-          ans <- ParsedImports <$> parseImports path
-          reply ans
+          ans <- parseImports path
+          case ans of
+            Left errs ->
+              reply $! SourceErrors errs
+            Right moduleHeader ->
+              reply $! ParsedImports moduleHeader
           workerMainLoop replyHandle
 
  where
@@ -178,20 +186,22 @@ workerMainLoop replyHandle = do
 ------------------------------------------------------------------------------
 
 -- | Parse the imports and flags set via pragmas.
-parseImports :: FilePath -> Ghc ModuleHeader
+parseImports :: FilePath -> Ghc (Either [Message] ModuleHeader)
 parseImports file = do
   dflags <- getSessionDynFlags
-  liftIO $ do
-    -- HeaderInfo.getOptions is pure but may throw an exception when
-    -- the result is forced (WTF?!).  This reads the file twice, but
-    -- I'll take correctness over performance anytime.
+  -- HeaderInfo.getOptions is pure but may throw an exception when
+  -- the result is forced (WTF?!).  This reads the file twice, but
+  -- I'll take correctness over performance anytime.
+  handleSourceError (\err ->
+      let msgs = bagToList $ srcErrorMessages err in
+      return $ Left $ map (ghcErrMessageToMessage dflags) msgs) $ liftIO $ do
     options <- map (T.pack . unLoc) <$> getOptionsFromFile dflags file
     buf <- hGetStringBuffer file
     (source_imports, normal_imports, module_name0)
       <- getImports dflags buf file file
     let imports = map (mkImport True) source_imports ++
                   map (mkImport False) normal_imports
-    return $! ModuleHeader
+    return . Right $! ModuleHeader
       { moduleHeaderModuleName = ghcToModuleName (unLoc module_name0)
       , moduleHeaderOptions = options
       , moduleHeaderImports = imports
@@ -211,3 +221,23 @@ parseImports file = do
 ghcToModuleName :: Ghc.ModuleName -> ModuleName
 ghcToModuleName mn = mkModuleName (T.pack (moduleNameString mn))
 
+ghcToSrcSpan :: Ghc.SrcSpan -> SourceSpan
+ghcToSrcSpan (UnhelpfulSpan _) = mempty
+ghcToSrcSpan (RealSrcSpan rspan) =
+  SourceSpan (srcSpanStartLine rspan - 1)
+             (srcSpanStartCol rspan - 1)
+             (srcSpanEndLine rspan - 1)
+             (srcSpanEndCol rspan - 1)
+
+ghcErrMessageToMessage :: DynFlags -> ErrMsg -> Message
+ghcErrMessageToMessage dflags0 msg =
+  -- TODO: Parse message
+  let sdoc =
+        sdocWithDynFlags $ \dflags ->
+          let style = mkErrStyle dflags (errMsgContext msg)
+          in withPprStyle style (errMsgShortDoc msg)
+      s : _ = errMsgSpans msg
+      sp = ghcToSrcSpan s
+  in Message Error sp (OtherMessage $ T.pack (showSDoc dflags0 sdoc))
+
+------------------------------------------------------------------------------
